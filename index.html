@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cetak Soal Ujian</title>
+<style>
+  :root{
+    --biru: #0d47a1;
+    --biru-muda: #e3edfb;
+    --abu: #6b7280;
+    --border: #d7dce3;
+    --merah: #b91c1c;
+    --hijau: #15803d;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    background:#2a2b2d;
+    color:#1f2933;
+  }
+
+  /* ===== AREA KONTROL (tidak ikut tercetak) ===== */
+  .panel{
+    max-width:900px;
+    margin:24px auto;
+    background:#282525;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+    padding:24px 28px 28px;
+  }
+  .panel h1{
+    font-size:20px;
+    color:var(--biru);
+    margin:0 0 4px;
+  }
+  .panel .sub{
+    color:var(--abu);
+    font-size:13px;
+    margin-bottom:20px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px 18px;
+  }
+  .grid .full{ grid-column:1 / -1; }
+  label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:#374151;
+    margin-bottom:4px;
+  }
+  input[type=text], input[type=password], input[type=number]{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    font-size:14px;
+    background:#fbfcfd;
+  }
+  input:focus{ outline:none; border-color:var(--biru); background:#fff; }
+  .hint{ font-size:11.5px; color:var(--abu); margin-top:3px; }
+  .row-btn{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  button{
+    border:none;
+    border-radius:7px;
+    padding:11px 20px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.15s;
+  }
+  button:disabled{ opacity:.55; cursor:not-allowed; }
+  .btn-primary{ background:var(--biru); color:#fff; }
+  .btn-primary:hover:not(:disabled){ background:#0a3679; }
+  .btn-print{ background:var(--hijau); color:#fff; }
+  .btn-print:hover:not(:disabled){ background:#0f5c2b; }
+  .btn-ghost{ background:#eef1f5; color:#374151; }
+  .btn-ghost:hover:not(:disabled){ background:#e2e6eb; }
+  .status{
+    margin-top:14px;
+    font-size:13px;
+    padding:9px 12px;
+    border-radius:6px;
+    display:none;
+  }
+  .status.show{ display:block; }
+  .status.err{ background:#fee2e2; color:var(--merah); }
+  .status.ok{ background:#dcfce7; color:var(--hijau); }
+  .status.info{ background:var(--biru-muda); color:var(--biru); }
+
+  .checkbox-line{
+    display:flex; align-items:center; gap:8px;
+    margin-top:4px;
+  }
+  .checkbox-line input{ width:16px; height:16px; }
+  .checkbox-line label{ margin:0; font-weight:500; }
+
+  /* ===== LEMBAR SOAL (area cetak) ===== */
+  #lembarWrap{ display:none; }
+  #lembarWrap.show{ display:block; }
+
+  .kertas{
+    width:210mm;
+    min-height:297mm;
+    margin:24px auto;
+    background:#fff;
+    box-shadow:0 2px 14px rgba(0,0,0,.15);
+    padding:18mm 18mm 15mm;
+  }
+  .kop{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    text-align:center;
+    border-bottom:3px double #111;
+    padding-bottom:10px;
+    margin-bottom:14px;
+  }
+  .kop .kop-logo{
+    flex:0 0 auto;
+    width:22mm;
+    height:22mm;
+    object-fit:contain;
+  }
+  .kop .kop-teks{
+    flex:1 1 auto;
+  }
+  .kop .judul-besar{
+    font-size:17px;
+    font-weight:700;
+    letter-spacing:.3px;
+    margin:0 0 3px;
+    text-transform:uppercase;
+  }
+  .kop .judul-kecil{
+    font-size:13px;
+    margin:0 0 2px;
+  }
+  .kop .judul-tahun{
+    font-size:12px;
+    color:#374151;
+  }
+
+  /* ===== UPLOAD LOGO (panel kontrol) ===== */
+  .logo-upload-box{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    border:1px dashed var(--border);
+    border-radius:7px;
+    padding:10px 12px;
+    background:#fbfcfd;
+  }
+  .logo-preview{
+    width:56px;
+    height:56px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    background:#fff repeating-conic-gradient(#f1f3f5 0% 25%, #fff 0% 50%) 50% / 12px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    flex:0 0 auto;
+  }
+  .logo-preview img{ max-width:100%; max-height:100%; object-fit:contain; }
+  .logo-preview span{ font-size:10px; color:var(--abu); text-align:center; }
+  .logo-upload-actions{ display:flex; flex-direction:column; gap:6px; }
+  .logo-upload-actions input[type=file]{ font-size:12.5px; }
+  .btn-mini{
+    background:#eef1f5;
+    color:#374151;
+    border:none;
+    border-radius:5px;
+    padding:5px 10px;
+    font-size:11.5px;
+    font-weight:600;
+    cursor:pointer;
+    align-self:flex-start;
+  }
+  .btn-mini:hover{ background:#e2e6eb; }
+
+  .identitas{
+    width:100%;
+    font-size:12.5px;
+    border-collapse:collapse;
+    margin-bottom:14px;
+  }
+  .identitas td{
+    padding:2.5px 4px;
+    vertical-align:top;
+  }
+  .identitas td.lbl{ width:110px; white-space:nowrap; }
+  .identitas td.ttk{ width:14px; }
+
+  .petunjuk{
+    font-size:11.5px;
+    background:#f4f6f8;
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:8px 10px;
+    margin-bottom:16px;
+    line-height:1.5;
+  }
+  .petunjuk b{ display:block; margin-bottom:3px; font-size:12px; }
+
+  .soal-item{
+    margin-bottom:16px;
+    page-break-inside:avoid;
+    font-size:13px;
+    line-height:1.55;
+  }
+  .soal-nomor{
+    font-weight:700;
+    margin-right:4px;
+  }
+  .soal-teks{ display:inline; }
+  .soal-gambar{
+    display:block;
+    max-width:100%;
+    max-height:70mm;
+    margin:6px 0 6px 18px;
+    border:1px solid var(--border);
+  }
+  .opsi-list{
+    margin:6px 0 0 18px;
+    padding:0;
+    list-style:none;
+  }
+  .opsi-list li{
+    display:flex;
+    gap:6px;
+    margin-bottom:3px;
+    align-items:flex-start;
+  }
+  .opsi-huruf{ font-weight:600; min-width:16px; }
+  .opsi-gambar{
+    display:block;
+    max-width:80mm;
+    max-height:40mm;
+    margin-top:3px;
+    border:1px solid var(--border);
+  }
+  .kunci-tag{
+    display:inline-block;
+    margin-left:8px;
+    padding:1px 8px;
+    background:#fef3c7;
+    color:#92400e;
+    border-radius:4px;
+    font-size:11px;
+    font-weight:700;
+  }
+
+  .footer-kertas{
+    margin-top:20px;
+    text-align:center;
+    font-size:10.5px;
+    color:var(--abu);
+    border-top:1px solid var(--border);
+    padding-top:6px;
+  }
+
+  /* ===== MODE CETAK ===== */
+  @media print{
+    body{ background:#fff; }
+    .panel, .no-print{ display:none !important; }
+    #lembarWrap{ display:block !important; }
+    .kertas{
+      box-shadow:none;
+      margin:0;
+      width:auto;
+      min-height:auto;
+      padding:0;
+    }
+    @page{
+      size: A4;
+      margin: 15mm 12mm;
+    }
+  }
+
+  @media (max-width:640px){
+    .grid{ grid-template-columns:1fr; }
+    .kertas{ width:100%; padding:8mm; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ PANEL KONTROL ============ -->
+<div class="panel no-print">
+  <h1>🖨️ Cetak Lembar Soal Ujian</h1>
+  <div class="sub">Isi data di bawah, tekan <b>Preview</b> untuk melihat lembar soal, lalu tekan <b>Cetak Soal (PDF)</b>.</div>
+
+  <div class="grid">
+    <div>
+      <label>Kode Mata Pelajaran *</label>
+      <input type="text" id="kodeMapel" placeholder="Contoh: MTK01">
+    </div>
+    <div>
+      <label>Password Mulai *</label>
+      <input type="password" id="passwordMulai" placeholder="Password soal">
+    </div>
+
+    <div class="full" style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
+      <label style="font-size:13px; color:var(--biru);">Identitas Lembar Soal (untuk kop &amp; kolom identitas cetak)</label>
+    </div>
+
+    <div class="full">
+      <label>Logo Sekolah (tampil di sisi kiri kop)</label>
+      <div class="logo-upload-box">
+        <div class="logo-preview" id="logoPreviewBox"><span>Belum ada logo</span></div>
+        <div class="logo-upload-actions">
+          <input type="file" id="logoUpload" accept="image/*">
+          <button type="button" class="btn-mini" id="btnHapusLogo">Hapus Logo</button>
+        </div>
+      </div>
+      <div class="hint">Logo disimpan di browser ini (bukan dikirim ke server) dan otomatis tampil lagi saat halaman dibuka ulang.</div>
+    </div>
+
+    <div>
+      <label>Judul Ujian</label>
+      <input type="text" id="judulUjian" placeholder="Contoh: UJIAN AKHIR SEMESTER GENAP">
+    </div>
+    <div>
+      <label>Tahun Ajaran</label>
+      <input type="text" id="tahunAjaran" placeholder="Contoh: 2025/2026">
+    </div>
+
+    <div>
+      <label>Nama Sekolah</label>
+      <input type="text" id="namaSekolah" placeholder="Contoh: SMP Negeri 1 Cikalongkulon">
+    </div>
+    <div>
+      <label>Kelas / Rombel</label>
+      <input type="text" id="kelasRombel" placeholder="Contoh: VIII A">
+    </div>
+
+    <div>
+      <label>Hari, Tanggal</label>
+      <input type="text" id="hariTanggal" placeholder="Contoh: Senin, 1 September 2026">
+    </div>
+    <div>
+      <label>Waktu</label>
+      <input type="text" id="waktuUjian" placeholder="Contoh: 07.30 - 09.00 WIB">
+    </div>
+
+    <div class="full">
+      <div class="checkbox-line">
+        <input type="checkbox" id="tampilkanKunci">
+        <label for="tampilkanKunci">Sertakan kunci jawaban (untuk arsip guru, jangan dicetak untuk siswa)</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="row-btn">
+    <button class="btn-primary" id="btnPreview">👁️ Preview</button>
+    <button class="btn-print" id="btnPrint" disabled>🖨️ Cetak Soal (PDF)</button>
+    <button class="btn-ghost" id="btnReset">↺ Reset</button>
+  </div>
+
+  <div class="status" id="statusBox"></div>
+</div>
+
+<!-- ============ LEMBAR SOAL (hasil preview, ikut tercetak) ============ -->
+<div id="lembarWrap">
+  <div class="kertas" id="kertasSoal"></div>
+</div>
+
+<script>
+(function(){
+  // ═══════════════════════════════════════════════════════
+  //  GANTI URL DI BAWAH INI DENGAN URL WEB APP HASIL DEPLOY
+  // ═══════════════════════════════════════════════════════
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzKTJSd9C4E4VpYD4Z38MHcIgpL_9c7h2sBdFzUAdu1OoYYfaZfUog0w1UwMCxz16E4/exec';
+
+  const $ = (id) => document.getElementById(id);
+  const statusBox = $('statusBox');
+
+  function setStatus(msg, type){
+    statusBox.textContent = msg;
+    statusBox.className = 'status show ' + (type || 'info');
+  }
+  function clearStatus(){
+    statusBox.className = 'status';
+  }
+
+  function escapeHtml(str){
+    return String(str || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ===== LOGO SEKOLAH =====
+  let logoDataUrl = localStorage.getItem('lembarSoalLogo') || '';
+
+  function tampilkanPreviewLogo(){
+    const box = $('logoPreviewBox');
+    if (logoDataUrl){
+      box.innerHTML = '<img src="' + logoDataUrl + '" alt="Logo sekolah">';
+    } else {
+      box.innerHTML = '<span>Belum ada logo</span>';
+    }
+  }
+  tampilkanPreviewLogo();
+
+  $('logoUpload').addEventListener('change', function(ev){
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')){
+      setStatus('File yang dipilih bukan gambar.', 'err');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e){
+      logoDataUrl = e.target.result;
+      try { localStorage.setItem('lembarSoalLogo', logoDataUrl); } catch(_) {}
+      tampilkanPreviewLogo();
+      setStatus('Logo berhasil diunggah.', 'ok');
+    };
+    reader.onerror = function(){
+      setStatus('Gagal membaca file logo.', 'err');
+    };
+    reader.readAsDataURL(file);
+  });
+
+  $('btnHapusLogo').addEventListener('click', function(){
+    logoDataUrl = '';
+    localStorage.removeItem('lembarSoalLogo');
+    $('logoUpload').value = '';
+    tampilkanPreviewLogo();
+    clearStatus();
+  });
+
+  function getBaseUrl(){
+    if (!WEB_APP_URL || WEB_APP_URL.indexOf('xxxx') !== -1) {
+      throw new Error('URL Web App belum diatur di dalam kode (cari WEB_APP_URL di bagian <script>).');
+    }
+    return WEB_APP_URL;
+  }
+
+  async function callGet(action, params){
+    const base = getBaseUrl();
+    const qs = new URLSearchParams(Object.assign({ action }, params || {}));
+    const res = await fetch(base + '?' + qs.toString(), { method:'GET' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Permintaan gagal.');
+    return data;
+  }
+
+  function renderLembar(mataPelajaran, soalList){
+    const judul       = escapeHtml($('judulUjian').value)   || 'LEMBAR SOAL UJIAN';
+    const tahunAjaran  = escapeHtml($('tahunAjaran').value);
+    const namaSekolah  = escapeHtml($('namaSekolah').value);
+    const kelasRombel  = escapeHtml($('kelasRombel').value);
+    const hariTanggal  = escapeHtml($('hariTanggal').value);
+    const waktuUjian   = escapeHtml($('waktuUjian').value);
+    const kodeMapel    = escapeHtml($('kodeMapel').value.toUpperCase());
+    const tampilKunci  = $('tampilkanKunci').checked;
+
+    let html = '';
+    html += '<div class="kop">';
+    if (logoDataUrl) {
+      html += '<img class="kop-logo" src="' + logoDataUrl + '" alt="Logo sekolah">';
+    }
+    html += '<div class="kop-teks">';
+    html += '<div class="judul-besar">' + judul + '</div>';
+    html += '<div class="judul-kecil">Mata Pelajaran: ' + escapeHtml(mataPelajaran) + ' (' + kodeMapel + ')</div>';
+    if (tahunAjaran) html += '<div class="judul-tahun">Tahun Ajaran ' + tahunAjaran + '</div>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<table class="identitas">';
+    html += row('Nama Sekolah', namaSekolah) + row('Kelas', kelasRombel);
+    html += row('Hari, Tanggal', hariTanggal) + row('Waktu', waktuUjian);
+    html += row('Nama Peserta', '________________________________');
+    html += row('No. Peserta', '________________________________');
+    html += '</table>';
+
+    html += '<div class="petunjuk"><b>Petunjuk Pengerjaan:</b>'
+          + '1) Tulis identitas pada tempat yang telah disediakan. '
+          + '2) Bacalah setiap soal dengan teliti sebelum menjawab. '
+          + '3) Pilih salah satu jawaban yang dianggap paling tepat. '
+          + '4) Periksa kembali jawaban sebelum diserahkan.</div>';
+
+    soalList.forEach(function(s){
+      html += '<div class="soal-item">';
+      html += '<span class="soal-nomor">' + s.no + '.</span>';
+      html += '<span class="soal-teks">' + escapeHtml(s.soal) + '</span>';
+      if (tampilKunci && s.kunci) {
+        html += '<span class="kunci-tag">Kunci: ' + escapeHtml(s.kunci) + '</span>';
+      }
+      if (s.gambarSoal) {
+        html += '<img class="soal-gambar" src="' + s.gambarSoal + '" alt="Gambar soal ' + s.no + '">';
+      }
+      if (s.pilihan && s.pilihan.length){
+        html += '<ul class="opsi-list">';
+        s.pilihan.forEach(function(op){
+          html += '<li><span class="opsi-huruf">' + op.huruf + '.</span><span>';
+          if (op.teks) html += escapeHtml(op.teks);
+          if (op.gambar) html += '<img class="opsi-gambar" src="' + op.gambar + '" alt="Opsi ' + op.huruf + '">';
+          html += '</span></li>';
+        });
+        html += '</ul>';
+      }
+      html += '</div>';
+    });
+
+    html += '<div class="footer-kertas">— Selamat Mengerjakan —</div>';
+
+    $('kertasSoal').innerHTML = html;
+    $('lembarWrap').classList.add('show');
+
+    function row(label, value){
+      return '<tr><td class="lbl">' + label + '</td><td class="ttk">:</td><td>' + (value || '&nbsp;') + '</td></tr>';
+    }
+  }
+
+  async function doPreview(){
+    clearStatus();
+    const kode = $('kodeMapel').value.trim();
+    const pwd  = $('passwordMulai').value.trim();
+
+    if (!kode) { setStatus('Kode mata pelajaran wajib diisi.', 'err'); return; }
+    if (!pwd)  { setStatus('Password mulai wajib diisi.', 'err'); return; }
+
+    $('btnPreview').disabled = true;
+    $('btnPrint').disabled = true;
+    setStatus('Mengambil data soal, mohon tunggu...', 'info');
+
+    try {
+      const data = await callGet('getSoal', { kode: kode, password: pwd });
+      const soalList = data.soalList || [];
+      if (soalList.length === 0){
+        setStatus('Tidak ada soal ditemukan untuk kode tersebut.', 'err');
+        return;
+      }
+      renderLembar(data.mataPelajaran || '-', soalList);
+      setStatus('Preview berhasil dimuat (' + soalList.length + ' soal). Periksa lembar di bawah, lalu tekan "Cetak Soal (PDF)".', 'ok');
+      $('btnPrint').disabled = false;
+      document.getElementById('lembarWrap').scrollIntoView({ behavior:'smooth' });
+    } catch (ex) {
+      setStatus('Gagal memuat soal: ' + ex.message, 'err');
+    } finally {
+      $('btnPreview').disabled = false;
+    }
+  }
+
+  function doPrint(){
+    window.print();
+  }
+
+  function doReset(){
+    ['kodeMapel','passwordMulai','judulUjian','tahunAjaran','namaSekolah',
+     'kelasRombel','hariTanggal','waktuUjian'].forEach(function(id){ $(id).value = ''; });
+    $('tampilkanKunci').checked = false;
+    $('kertasSoal').innerHTML = '';
+    $('lembarWrap').classList.remove('show');
+    $('btnPrint').disabled = true;
+    clearStatus();
+  }
+
+  $('btnPreview').addEventListener('click', doPreview);
+  $('btnPrint').addEventListener('click', doPrint);
+  $('btnReset').addEventListener('click', doReset);
+})();
+</script>
+
+</body>
+</html>
