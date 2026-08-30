@@ -115,7 +115,7 @@
     margin:24px auto;
     background:#fff;
     box-shadow:0 2px 14px rgba(0,0,0,.15);
-    padding:18mm 18mm 15mm;
+    padding:14mm 14mm 10mm;
   }
   .kop{
     display:flex;
@@ -215,7 +215,7 @@
   .petunjuk b{ display:block; margin-bottom:3px; font-size:12px; }
 
   .soal-item{
-    margin-bottom:16px;
+    margin-bottom:1.25em; /* jarak antar soal: 1,25 spasi */
     page-break-inside:avoid;
     font-size:13px;
     line-height:1.55;
@@ -233,7 +233,7 @@
     border:1px solid var(--border);
   }
   .opsi-list{
-    margin:6px 0 0 18px;
+    margin:0 0 0 18px; /* jarak soal ke pilihan jawaban: 0 spasi */
     padding:0;
     list-style:none;
   }
@@ -262,6 +262,131 @@
     font-weight:700;
   }
 
+  .pilihan-bersama-blok{
+    page-break-inside:avoid;
+    background:#f4f8ff;
+    border:1px solid #b9d3f7;
+    border-radius:6px;
+    padding:10px 14px 12px;
+    margin-bottom:10px;
+  }
+  .pilihan-bersama-label{
+    font-size:11.5px;
+    font-weight:700;
+    color:#0d47a1;
+    margin-bottom:6px;
+  }
+  .opsi-list-bersama{
+    margin:0 0 0 18px !important;
+  }
+
+  .bagian-soal-judul{
+    font-size:14px;
+    font-weight:800;
+    color:#0d47a1;
+    margin:18px 0 6px;
+    padding-bottom:4px;
+    border-bottom:2px solid #0d47a1;
+    break-after:avoid;
+    page-break-after:avoid;
+    break-inside:avoid;
+  }
+  .bagian-soal-judul:first-child{ margin-top:0; }
+  .bagian-soal-deskripsi{
+    font-size:11.5px;
+    font-style:italic;
+    color:#374151;
+    margin:0 0 10px;
+    break-after:avoid;
+    page-break-after:avoid;
+  }
+
+  /* ===== MODE HEMAT KERTAS (2 kolom + dipadatkan) ===== */
+  .kertas-konten{
+    column-count:1;
+    column-gap:9mm;
+  }
+  .kertas.hemat{
+    padding:10mm 10mm 8mm;
+  }
+  .kertas.hemat .kop{
+    padding-bottom:6px;
+    margin-bottom:8px;
+    gap:8px;
+  }
+  .kertas.hemat .kop .kop-logo{
+    width:14mm;
+    height:14mm;
+  }
+  .kertas.hemat .judul-besar{ font-size:14px; margin-bottom:2px; }
+  .kertas.hemat .judul-kecil{ font-size:11px; }
+  .kertas.hemat .judul-tahun{ font-size:10px; }
+  .kertas.hemat .identitas{ font-size:10.5px; margin-bottom:7px; }
+  .kertas.hemat .identitas td{ padding:1.5px 4px; }
+  .kertas.hemat .petunjuk{
+    font-size:9.5px;
+    padding:5px 8px;
+    margin-bottom:8px;
+    line-height:1.35;
+  }
+  .kertas.hemat .petunjuk b{ font-size:10px; margin-bottom:2px; }
+  .kertas.hemat .kertas-konten{
+    column-count:2;
+    column-gap:8mm;
+  }
+  .kertas.hemat .soal-item{
+    font-size:10.5px;
+    line-height:1.4;
+    margin-bottom:0.75em;
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+  .kertas.hemat .soal-gambar{
+    max-height:32mm;
+    margin:3px 0 3px 10px;
+  }
+  .kertas.hemat .opsi-list{
+    margin:0 0 0 12px;
+  }
+  .kertas.hemat .opsi-list li{
+    margin-bottom:1px;
+    gap:5px;
+  }
+  .kertas.hemat .opsi-gambar{
+    max-width:55mm;
+    max-height:24mm;
+  }
+  .kertas.hemat .kunci-tag{
+    font-size:9.5px;
+    padding:0 6px;
+  }
+  .kertas.hemat .pilihan-bersama-blok{
+    padding:6px 9px 7px;
+    margin-bottom:7px;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    column-span:all;
+  }
+  .kertas.hemat .pilihan-bersama-label{
+    font-size:10px;
+    margin-bottom:4px;
+  }
+  .kertas.hemat .footer-kertas{
+    margin-top:10px;
+    padding-top:4px;
+    font-size:9px;
+  }
+  .kertas.hemat .bagian-soal-judul{
+    column-span:all;
+    font-size:11.5px;
+    margin:12px 0 4px;
+  }
+  .kertas.hemat .bagian-soal-deskripsi{
+    column-span:all;
+    font-size:9.5px;
+    margin:0 0 7px;
+  }
+
   .footer-kertas{
     margin-top:20px;
     text-align:center;
@@ -285,7 +410,7 @@
     }
     @page{
       size: A4;
-      margin: 15mm 12mm;
+      margin: 12mm 10mm;
     }
   }
 
@@ -359,6 +484,10 @@
       <div class="checkbox-line">
         <input type="checkbox" id="tampilkanKunci">
         <label for="tampilkanKunci">Sertakan kunci jawaban (untuk arsip guru, jangan dicetak untuk siswa)</label>
+      </div>
+      <div class="checkbox-line">
+        <input type="checkbox" id="hematKertas" checked>
+        <label for="hematKertas">Mode Hemat Kertas (2 kolom, font &amp; gambar dipadatkan)</label>
       </div>
     </div>
   </div>
@@ -458,6 +587,203 @@
     return data;
   }
 
+  // ===== DETEKSI LINK GAMBAR DI DALAM TEKS SOAL / PILIHAN =====
+  // Mengambil semua URL gambar yang tertulis langsung di dalam teks
+  // (baik ekstensi gambar biasa maupun link share Google Drive),
+  // lalu mengembalikan teks bersih (tanpa link) + daftar URL gambarnya.
+  function ubahLinkDriveJadiLangsung(teks){
+    teks = teks.replace(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)[^\s]*/gi, function(m, id){
+      return 'https://drive.google.com/uc?export=view&id=' + id;
+    });
+    teks = teks.replace(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/gi, function(m, id){
+      return 'https://drive.google.com/uc?export=view&id=' + id;
+    });
+    return teks;
+  }
+
+  function ekstrakGambarDariTeks(teksAsli){
+    let teks = ubahLinkDriveJadiLangsung(String(teksAsli || ''));
+    const gambarUrls = [];
+
+    // Link gambar: berekstensi umum, ATAU link Google Drive yang sudah dikonversi
+    const regexGambar = /(https?:\/\/[^\s]+?\.(?:png|jpe?g|gif|webp|svg)(?:\?[^\s]*)?|https?:\/\/drive\.google\.com\/uc\?export=view&id=[a-zA-Z0-9_-]+)/gi;
+
+    teks = teks.replace(regexGambar, function(url){
+      gambarUrls.push(url);
+      return '';
+    });
+
+    return { teksBersih: teks.replace(/\s+/g, ' ').trim(), gambarUrls: gambarUrls };
+  }
+
+  function renderTagGambar(urls, kelasCss, altTeks){
+    // Gambar TIDAK langsung dipasang sebagai src di sini.
+    // Disimpan dulu di data-gambar-url, lalu diproses oleh muatSemuaGambarSoal()
+    // supaya link Google Drive / proxy bisa diambil lewat Apps Script (proxyImage)
+    // dan tidak kena masalah login/akses saat dimuat langsung oleh browser.
+    let out = '';
+    urls.forEach(function(url){
+      out += '<img class="' + kelasCss + '" data-gambar-url="' + escapeHtml(url) + '" '
+           + 'style="min-height:24mm;background:#f4f6f8" alt="' + escapeHtml(altTeks) + '">';
+    });
+    return out;
+  }
+
+  // ===== AMBIL ID GOOGLE DRIVE DARI BERBAGAI FORMAT LINK =====
+  function extractDriveId(url){
+    if (!url) return null;
+    let m = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/); if (m) return m[1];
+    m = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/); if (m) return m[1];
+    if (/^[a-zA-Z0-9_-]{25,}$/.test(url)) return url;
+    return null;
+  }
+
+  // Panggil Apps Script (action=proxyImage&id=...) untuk mengambil gambar
+  // sebagai base64 data URI, persis seperti cara aplikasi ujian menampilkan gambar.
+  const _gambarProxyCache = {};
+  async function ambilGambarProxy(fileId){
+    if (_gambarProxyCache[fileId]) return _gambarProxyCache[fileId];
+    const base = getBaseUrl();
+    const qs = new URLSearchParams({ action:'proxyImage', id: fileId });
+    const res = await fetch(base + '?' + qs.toString());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.success || !data.dataUri) throw new Error(data.message || 'proxyImage gagal');
+    _gambarProxyCache[fileId] = data.dataUri;
+    return data.dataUri;
+  }
+
+  // Muat semua <img data-gambar-url="..."> di lembar soal:
+  // - Link Google Drive / berisi kata "proxyImage" -> diambil lewat Apps Script (data URI)
+  // - Link gambar biasa (host lain, berekstensi umum) -> dipakai langsung
+  async function muatSemuaGambarSoal(){
+    const daftarImg = Array.from(document.querySelectorAll('#kertasSoal img[data-gambar-url]'));
+    let gagal = 0;
+    for (const img of daftarImg){
+      const url = img.getAttribute('data-gambar-url');
+      if (!url) continue;
+      const perluProxy = /drive\.google\.com|proxyimage/i.test(url) || extractDriveId(url);
+      try {
+        if (perluProxy){
+          const fid = extractDriveId(url);
+          if (!fid) throw new Error('ID Drive tidak ditemukan pada link');
+          const dataUri = await ambilGambarProxy(fid);
+          img.src = dataUri;
+        } else {
+          img.src = url;
+        }
+        img.style.background = 'transparent';
+      } catch (e){
+        gagal++;
+        img.alt = 'Gagal memuat: ' + (img.getAttribute('alt') || 'gambar');
+        img.style.cssText = 'min-height:16mm;background:#fee2e2;color:#b91c1c;font-size:11px;display:flex;align-items:center;justify-content:center;border:1px dashed #b91c1c;padding:4px;text-align:center;';
+      }
+      img.removeAttribute('data-gambar-url');
+    }
+    return { total: daftarImg.length, gagal: gagal };
+  }
+
+  // ===== GRUP PILIHAN JAWABAN LEBIH DARI 5 =====
+  // Soal-soal berurutan yang pilihan jawabannya sama-sama lebih dari 5
+  // dianggap satu kelompok (misal soal cerita/wacana dengan pilihan bersama).
+  // Pilihan jawabannya cukup dicetak SEKALI di atas soal pertama pada
+  // kelompok itu; soal-soal lain dalam kelompok tidak mencetak pilihan lagi.
+  function jmlPilihan(s){
+    return Array.isArray(s.pilihan) ? s.pilihan.length : 0;
+  }
+  function tandaiGrupPilihanBesar(list){
+    const info = new Array(list.length).fill(null);
+    let i = 0;
+    while (i < list.length){
+      if (jmlPilihan(list[i]) > 5){
+        let j = i;
+        while (j < list.length && jmlPilihan(list[j]) > 5) j++;
+        for (let k = i; k < j; k++){
+          info[k] = { grupMulaiIdx: i, grupAkhirIdx: j - 1 };
+        }
+        i = j;
+      } else {
+        i++;
+      }
+    }
+    return info;
+  }
+  function renderDaftarOpsi(pilihan, kelasUl){
+    let out = '<ul class="' + kelasUl + '">';
+    pilihan.forEach(function(op){
+      const opsiOlahan = ekstrakGambarDariTeks(op.teks);
+      out += '<li><span class="opsi-huruf">' + op.huruf + '.</span><span>';
+      if (opsiOlahan.teksBersih) out += escapeHtml(opsiOlahan.teksBersih);
+      if (op.gambar) out += renderTagGambar([op.gambar], 'opsi-gambar', 'Opsi ' + op.huruf);
+      out += renderTagGambar(opsiOlahan.gambarUrls, 'opsi-gambar', 'Opsi ' + op.huruf);
+      out += '</span></li>';
+    });
+    out += '</ul>';
+    return out;
+  }
+  function renderBlokPilihanBersama(soalPertama, noAwal, noAkhir){
+    let out = '<div class="pilihan-bersama-blok">';
+    out += '<div class="pilihan-bersama-label">Pilihan Jawaban untuk Soal No. '
+         + escapeHtml(String(noAwal)) + (String(noAwal) !== String(noAkhir) ? ' – ' + escapeHtml(String(noAkhir)) : '')
+         + ':</div>';
+    out += renderDaftarOpsi(soalPertama.pilihan, 'opsi-list opsi-list-bersama');
+    out += '</div>';
+    return out;
+  }
+
+  // ===== PENGELOMPOKAN SOAL BERDASARKAN BENTUK =====
+  // 4 atau 5 pilihan  -> Pilihan Ganda
+  // 2 pilihan         -> Benar - Salah
+  // lebih dari 5      -> Menjodohkan
+  // selain itu        -> Lainnya (ditaruh paling akhir, jaga-jaga)
+  function tentukanBentukSoal(jml){
+    if (jml === 4 || jml === 5) return 'pg';
+    if (jml === 2) return 'bs';
+    if (jml > 5) return 'menjodohkan';
+    return 'lain';
+  }
+
+  const DEFINISI_BAGIAN_SOAL = [
+    { key: 'pg',           judul: 'Pilihan Ganda',              deskripsi: 'Pilihlah satu jawaban yang paling tepat!' },
+    { key: 'bs',           judul: 'Pernyataan Benar – Salah',   deskripsi: 'Tentukan apakah pernyataan berikut Benar atau Salah!' },
+    { key: 'menjodohkan',  judul: 'Menjodohkan',                deskripsi: 'Jodohkan setiap pernyataan dengan pilihan jawaban yang sesuai!' },
+    { key: 'lain',         judul: 'Lainnya',                    deskripsi: '' },
+  ];
+
+  // Mengurutkan ulang soal per bentuk (urutan asli di dalam tiap bentuk tetap dijaga),
+  // lalu mengembalikan { soalTerurut, headerMap } — headerMap memetakan index di
+  // soalTerurut ke info judul bagian yang harus dicetak SEBELUM soal pada index itu.
+  // Setiap soal juga diberi properti `noTampil`, yaitu nomor urut LOKAL yang
+  // dimulai dari 1 kembali di setiap bentuk soal (PG, Benar-Salah, Menjodohkan, dst).
+  function urutkanSoalPerBentuk(list){
+    const kelompok = { pg: [], bs: [], menjodohkan: [], lain: [] };
+    list.forEach(function(s){
+      kelompok[tentukanBentukSoal(jmlPilihan(s))].push(s);
+    });
+
+    const hurufBagian = ['A','B','C','D','E'];
+    let idxHuruf = 0;
+    const soalTerurut = [];
+    const headerMap = {};
+
+    DEFINISI_BAGIAN_SOAL.forEach(function(bagian){
+      const arr = kelompok[bagian.key];
+      if (arr.length === 0) return;
+      headerMap[soalTerurut.length] = {
+        judul: hurufBagian[idxHuruf] + '. ' + bagian.judul,
+        deskripsi: bagian.deskripsi,
+      };
+      idxHuruf++;
+      arr.forEach(function(s, idx){
+        // Buat salinan objek soal supaya data asli (mis. s.no dari sumber data)
+        // tidak berubah, lalu tambahkan noTampil = nomor urut lokal (mulai dari 1).
+        soalTerurut.push(Object.assign({}, s, { noTampil: idx + 1 }));
+      });
+    });
+
+    return { soalTerurut: soalTerurut, headerMap: headerMap };
+  }
+
   function renderLembar(mataPelajaran, soalList){
     const judul       = escapeHtml($('judulUjian').value)   || 'LEMBAR SOAL UJIAN';
     const tahunAjaran  = escapeHtml($('tahunAjaran').value);
@@ -467,6 +793,9 @@
     const waktuUjian   = escapeHtml($('waktuUjian').value);
     const kodeMapel    = escapeHtml($('kodeMapel').value.toUpperCase());
     const tampilKunci  = $('tampilkanKunci').checked;
+    const modeHemat    = $('hematKertas').checked;
+
+    $('kertasSoal').className = 'kertas' + (modeHemat ? ' hemat' : '');
 
     let html = '';
     html += '<div class="kop">';
@@ -493,28 +822,56 @@
           + '3) Pilih salah satu jawaban yang dianggap paling tepat. '
           + '4) Periksa kembali jawaban sebelum diserahkan.</div>';
 
-    soalList.forEach(function(s){
+    const { soalTerurut, headerMap } = urutkanSoalPerBentuk(soalList);
+    const grupInfo = tandaiGrupPilihanBesar(soalTerurut);
+
+    html += '<div class="kertas-konten">';
+
+    for (let i = 0; i < soalTerurut.length; i++){
+      const s = soalTerurut[i];
+      const grup = grupInfo[i];
+
+      // Cetak judul bagian (Pilihan Ganda / Benar-Salah / Menjodohkan) di awal kelompok
+      if (headerMap[i]){
+        html += '<div class="bagian-soal-judul">' + escapeHtml(headerMap[i].judul) + '</div>';
+        if (headerMap[i].deskripsi){
+          html += '<div class="bagian-soal-deskripsi">' + escapeHtml(headerMap[i].deskripsi) + '</div>';
+        }
+      }
+
+      // Jika soal ini adalah soal PERTAMA pada kelompok pilihan >5,
+      // cetak dulu blok pilihan bersama di atasnya.
+      if (grup && grup.grupMulaiIdx === i){
+        const soalAwal  = soalTerurut[grup.grupMulaiIdx];
+        const soalAkhir = soalTerurut[grup.grupAkhirIdx];
+        html += renderBlokPilihanBersama(soalAwal, soalAwal.noTampil, soalAkhir.noTampil);
+      }
+
       html += '<div class="soal-item">';
-      html += '<span class="soal-nomor">' + s.no + '.</span>';
-      html += '<span class="soal-teks">' + escapeHtml(s.soal) + '</span>';
+      html += '<span class="soal-nomor">' + s.noTampil + '.</span>';
+
+      // Deteksi link gambar yang ditulis langsung di dalam teks soal
+      const soalOlahan = ekstrakGambarDariTeks(s.soal);
+      html += '<span class="soal-teks">' + escapeHtml(soalOlahan.teksBersih) + '</span>';
       if (tampilKunci && s.kunci) {
         html += '<span class="kunci-tag">Kunci: ' + escapeHtml(s.kunci) + '</span>';
       }
+
+      // Gambar dari kolom gambarSoal (jika ada) + gambar hasil deteksi link di teks
       if (s.gambarSoal) {
-        html += '<img class="soal-gambar" src="' + s.gambarSoal + '" alt="Gambar soal ' + s.no + '">';
+        html += renderTagGambar([s.gambarSoal], 'soal-gambar', 'Gambar soal ' + s.noTampil);
       }
-      if (s.pilihan && s.pilihan.length){
-        html += '<ul class="opsi-list">';
-        s.pilihan.forEach(function(op){
-          html += '<li><span class="opsi-huruf">' + op.huruf + '.</span><span>';
-          if (op.teks) html += escapeHtml(op.teks);
-          if (op.gambar) html += '<img class="opsi-gambar" src="' + op.gambar + '" alt="Opsi ' + op.huruf + '">';
-          html += '</span></li>';
-        });
-        html += '</ul>';
+      html += renderTagGambar(soalOlahan.gambarUrls, 'soal-gambar', 'Gambar soal ' + s.noTampil);
+
+      // Pilihan jawaban dicetak per-soal HANYA jika bukan bagian dari
+      // kelompok pilihan >5 (kelompok itu sudah diwakili blok bersama di atas).
+      if (!grup && s.pilihan && s.pilihan.length){
+        html += renderDaftarOpsi(s.pilihan, 'opsi-list');
       }
       html += '</div>';
-    });
+    }
+
+    html += '</div>'; // tutup .kertas-konten
 
     html += '<div class="footer-kertas">— Selamat Mengerjakan —</div>';
 
@@ -546,9 +903,18 @@
         return;
       }
       renderLembar(data.mataPelajaran || '-', soalList);
-      setStatus('Preview berhasil dimuat (' + soalList.length + ' soal). Periksa lembar di bawah, lalu tekan "Cetak Soal (PDF)".', 'ok');
-      $('btnPrint').disabled = false;
       document.getElementById('lembarWrap').scrollIntoView({ behavior:'smooth' });
+
+      setStatus('Preview dimuat (' + soalList.length + ' soal). Sedang memuat gambar...', 'info');
+      const hasilGambar = await muatSemuaGambarSoal();
+      if (hasilGambar.total === 0) {
+        setStatus('Preview berhasil dimuat (' + soalList.length + ' soal, tanpa gambar). Tekan "Cetak Soal (PDF)".', 'ok');
+      } else if (hasilGambar.gagal === 0) {
+        setStatus('Preview berhasil dimuat (' + soalList.length + ' soal, ' + hasilGambar.total + ' gambar). Tekan "Cetak Soal (PDF)".', 'ok');
+      } else {
+        setStatus(hasilGambar.gagal + ' dari ' + hasilGambar.total + ' gambar gagal dimuat (lihat kotak merah di lembar soal). Soal lain tetap bisa dicetak.', 'err');
+      }
+      $('btnPrint').disabled = false;
     } catch (ex) {
       setStatus('Gagal memuat soal: ' + ex.message, 'err');
     } finally {
