@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cetak Soal Ujian</title>
+
+<!-- ===== MATHJAX: render rumus LaTeX ($...$ , $$...$$ , \(...\) , \[...\]) ===== -->
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    },
+    options: {
+      skipHtmlTags: ['script','noscript','style','textarea','pre','code']
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+
 <style>
   :root{
     --biru: #0d47a1;
@@ -418,6 +434,82 @@
     .grid{ grid-template-columns:1fr; }
     .kertas{ width:100%; padding:8mm; }
   }
+
+  /* ===== MODE QUIS (INTERAKTIF) ===== */
+  .btn-quiz{ background:#7c3aed; color:#fff; }
+  .btn-quiz:hover:not(:disabled){ background:#6528c9; }
+
+  .kuis-overlay{
+    position:fixed; inset:0;
+    background:rgba(15,17,20,.65);
+    display:none;
+    align-items:center; justify-content:center;
+    padding:18px;
+    z-index:1000;
+  }
+  .kuis-overlay.show{ display:flex; }
+  .kuis-card{
+    background:#fff;
+    border-radius:12px;
+    width:100%; max-width:640px;
+    max-height:92vh;
+    overflow-y:auto;
+    padding:22px 24px 24px;
+    box-shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+  .kuis-header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:16px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--border);
+  }
+  .kuis-progress{ font-size:13px; font-weight:700; color:var(--abu); }
+  .kuis-header-right{ display:flex; align-items:center; gap:10px; }
+  .kuis-timer{
+    font-size:14.5px; font-weight:800;
+    color:var(--biru); background:var(--biru-muda);
+    padding:5px 13px; border-radius:20px;
+    min-width:56px; text-align:center;
+  }
+  .kuis-timer.warn{ color:#fff; background:var(--merah); }
+  .kuis-close{
+    background:#eef1f5; border:none; color:#374151;
+    width:30px; height:30px; border-radius:50%;
+    font-size:15px; cursor:pointer; line-height:1;
+  }
+  .kuis-close:hover{ background:#e2e6eb; }
+
+  .kuis-soal-teks{ font-size:15px; line-height:1.65; color:#1f2933; margin-bottom:12px; }
+  .kuis-opsi{ display:flex; flex-direction:column; gap:9px; margin:0 0 20px; }
+  .kuis-opsi label{
+    display:flex; gap:10px; align-items:flex-start;
+    padding:11px 13px;
+    border:1.5px solid var(--border); border-radius:9px;
+    cursor:pointer; font-size:14px; color:#1f2933;
+    transition:.15s;
+  }
+  .kuis-opsi label:hover{ border-color:var(--biru); background:var(--biru-muda); }
+  .kuis-opsi label.dipilih{ border-color:var(--biru); background:var(--biru-muda); font-weight:600; }
+  .kuis-opsi input{ margin-top:3px; width:15px; height:15px; flex:0 0 auto; }
+  .kuis-opsi .soal-gambar, .kuis-opsi .opsi-gambar{ max-width:100%; }
+  #kuisBody .soal-gambar{ max-height:60mm; margin:6px 0 14px; }
+
+  .kuis-footer{ display:flex; justify-content:space-between; gap:10px; }
+  .kuis-skor{
+    text-align:center; font-size:24px; font-weight:800;
+    color:var(--biru); margin:6px 0 16px;
+  }
+  .kuis-hasil-item{
+    border:1.5px solid var(--border); border-radius:9px;
+    padding:11px 13px; margin-bottom:10px; font-size:13.5px; line-height:1.5;
+  }
+  .kuis-hasil-item.benar{ border-color:var(--hijau); background:#f0fdf4; }
+  .kuis-hasil-item.salah{ border-color:var(--merah); background:#fef2f2; }
+  .kuis-hasil-item .kuis-hasil-info{ margin-top:6px; font-size:12.5px; color:#374151; }
+
+  @media (max-width:640px){
+    .kuis-card{ padding:16px 16px 18px; max-height:96vh; }
+  }
 </style>
 </head>
 <body>
@@ -490,11 +582,21 @@
         <label for="hematKertas">Mode Hemat Kertas (2 kolom, font &amp; gambar dipadatkan)</label>
       </div>
     </div>
+
+    <div class="full" style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
+      <label style="font-size:13px; color:#7c3aed;">Mode Quis Interaktif</label>
+    </div>
+    <div>
+      <label>Durasi per Soal (detik)</label>
+      <input type="number" id="durasiSoalKuis" value="30" min="5" step="5">
+      <div class="hint">Bila waktu habis, quis otomatis berpindah ke soal berikutnya.</div>
+    </div>
   </div>
 
   <div class="row-btn">
     <button class="btn-primary" id="btnPreview">👁️ Preview</button>
     <button class="btn-print" id="btnPrint" disabled>🖨️ Cetak Soal (PDF)</button>
+    <button class="btn-quiz" id="btnKuis">📝 Gunakan Quis</button>
     <button class="btn-ghost" id="btnReset">↺ Reset</button>
   </div>
 
@@ -504,6 +606,20 @@
 <!-- ============ LEMBAR SOAL (hasil preview, ikut tercetak) ============ -->
 <div id="lembarWrap">
   <div class="kertas" id="kertasSoal"></div>
+</div>
+
+<!-- ============ MODE QUIS INTERAKTIF (tidak ikut tercetak) ============ -->
+<div class="kuis-overlay no-print" id="kuisOverlay">
+  <div class="kuis-card">
+    <div class="kuis-header">
+      <div class="kuis-progress" id="kuisProgress">Soal 1 dari 1</div>
+      <div class="kuis-header-right">
+        <div class="kuis-timer" id="kuisTimer">⏱ 30</div>
+        <button class="kuis-close" id="btnTutupKuis" title="Tutup Quis" type="button">✕</button>
+      </div>
+    </div>
+    <div id="kuisBody"></div>
+  </div>
 </div>
 
 <script>
@@ -527,6 +643,25 @@
   function escapeHtml(str){
     return String(str || '')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ===== RENDER RUMUS LATEX (MATHJAX) =====
+  // Dipanggil setiap kali ada konten soal baru yang dimasukkan ke DOM
+  // (innerHTML), supaya penulisan seperti $1\text{ km}$ dirender jadi rumus,
+  // bukan tampil sebagai teks mentah.
+  function renderMathJax(target){
+    try {
+      if (window.MathJax && window.MathJax.typesetPromise){
+        MathJax.typesetPromise(target ? [target] : undefined)
+          .catch(function(e){ console.warn('MathJax gagal merender:', e); });
+      } else if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise){
+        // MathJax masih dalam proses dimuat/disiapkan, tunggu dulu
+        window.MathJax.startup.promise.then(function(){
+          MathJax.typesetPromise(target ? [target] : undefined)
+            .catch(function(e){ console.warn('MathJax gagal merender:', e); });
+        });
+      }
+    } catch(e){ console.warn('MathJax gagal merender:', e); }
   }
 
   // ===== LOGO SEKOLAH =====
@@ -656,8 +791,9 @@
   // Muat semua <img data-gambar-url="..."> di lembar soal:
   // - Link Google Drive / berisi kata "proxyImage" -> diambil lewat Apps Script (data URI)
   // - Link gambar biasa (host lain, berekstensi umum) -> dipakai langsung
-  async function muatSemuaGambarSoal(){
-    const daftarImg = Array.from(document.querySelectorAll('#kertasSoal img[data-gambar-url]'));
+  async function muatSemuaGambarSoal(containerSelector){
+    const sel = (containerSelector || '#kertasSoal') + ' img[data-gambar-url]';
+    const daftarImg = Array.from(document.querySelectorAll(sel));
     let gagal = 0;
     for (const img of daftarImg){
       const url = img.getAttribute('data-gambar-url');
@@ -877,6 +1013,7 @@
 
     $('kertasSoal').innerHTML = html;
     $('lembarWrap').classList.add('show');
+    renderMathJax($('kertasSoal'));
 
     function row(label, value){
       return '<tr><td class="lbl">' + label + '</td><td class="ttk">:</td><td>' + (value || '&nbsp;') + '</td></tr>';
@@ -936,9 +1073,198 @@
     clearStatus();
   }
 
+  // ═══════════════════════════════════════════════════════
+  //  MODE QUIS INTERAKTIF
+  // ═══════════════════════════════════════════════════════
+  let kuisSoalList   = [];
+  let kuisIndex      = 0;
+  let kuisJawaban    = [];
+  let kuisDurasi     = 30;
+  let kuisSisaDetik  = 0;
+  let kuisTimerId    = null;
+
+  function ambilDurasiKuis(){
+    const v = parseInt($('durasiSoalKuis').value, 10);
+    return (!isNaN(v) && v > 0) ? v : 30;
+  }
+
+  async function doMulaiKuis(){
+    clearStatus();
+    const kode = $('kodeMapel').value.trim();
+    const pwd  = $('passwordMulai').value.trim();
+
+    if (!kode) { setStatus('Kode mata pelajaran wajib diisi.', 'err'); return; }
+    if (!pwd)  { setStatus('Password / kata kunci mulai wajib diisi.', 'err'); return; }
+
+    $('btnKuis').disabled = true;
+    setStatus('Mengambil soal untuk quis, mohon tunggu...', 'info');
+
+    try {
+      const data = await callGet('getSoal', { kode: kode, password: pwd });
+      const soalList = data.soalList || [];
+      if (soalList.length === 0){
+        setStatus('Tidak ada soal ditemukan untuk kode dan kata kunci tersebut.', 'err');
+        return;
+      }
+
+      kuisSoalList = soalList;
+      kuisIndex    = 0;
+      kuisJawaban  = new Array(kuisSoalList.length).fill(null);
+      kuisDurasi   = ambilDurasiKuis();
+
+      $('kuisOverlay').classList.add('show');
+      renderSoalKuis(kuisIndex);
+      setStatus('Quis dimulai (' + kuisSoalList.length + ' soal).', 'ok');
+    } catch (ex) {
+      setStatus('Gagal memuat soal untuk quis: ' + ex.message, 'err');
+    } finally {
+      $('btnKuis').disabled = false;
+    }
+  }
+
+  function renderSoalKuis(idx){
+    hentikanTimerKuis();
+    const s = kuisSoalList[idx];
+    $('kuisProgress').textContent = 'Soal ' + (idx + 1) + ' dari ' + kuisSoalList.length;
+
+    const soalOlahan = ekstrakGambarDariTeks(s.soal);
+    let html = '<div class="kuis-soal-teks"><b>' + (idx + 1) + '.</b> ' + escapeHtml(soalOlahan.teksBersih) + '</div>';
+
+    if (s.gambarSoal) html += renderTagGambar([s.gambarSoal], 'soal-gambar', 'Gambar soal ' + (idx + 1));
+    html += renderTagGambar(soalOlahan.gambarUrls, 'soal-gambar', 'Gambar soal ' + (idx + 1));
+
+    html += '<div class="kuis-opsi">';
+    (s.pilihan || []).forEach(function(op){
+      const opsiOlahan = ekstrakGambarDariTeks(op.teks);
+      const dipilih = kuisJawaban[idx] === op.huruf;
+      html += '<label class="' + (dipilih ? 'dipilih' : '') + '" data-huruf="' + escapeHtml(op.huruf) + '">';
+      html += '<input type="radio" name="kuisOpsi" value="' + escapeHtml(op.huruf) + '" ' + (dipilih ? 'checked' : '') + '>';
+      html += '<span>' + escapeHtml(op.huruf) + '. ' + escapeHtml(opsiOlahan.teksBersih);
+      if (op.gambar) html += renderTagGambar([op.gambar], 'opsi-gambar', 'Opsi ' + op.huruf);
+      html += renderTagGambar(opsiOlahan.gambarUrls, 'opsi-gambar', 'Opsi ' + op.huruf);
+      html += '</span></label>';
+    });
+    html += '</div>';
+
+    html += '<div class="kuis-footer">';
+    html += '<button class="btn-ghost" id="btnKembaliKuis" type="button"' + (idx === 0 ? ' disabled' : '') + '>← Kembali</button>';
+    html += '<button class="btn-primary" id="btnLanjutkanKuis" type="button">'
+          + (idx === kuisSoalList.length - 1 ? 'Selesai ✓' : 'Lanjutkan →') + '</button>';
+    html += '</div>';
+
+    $('kuisBody').innerHTML = html;
+
+    document.querySelectorAll('#kuisBody .kuis-opsi label').forEach(function(lbl){
+      lbl.addEventListener('click', function(){
+        kuisJawaban[idx] = lbl.getAttribute('data-huruf');
+        document.querySelectorAll('#kuisBody .kuis-opsi label').forEach(function(l){ l.classList.remove('dipilih'); });
+        lbl.classList.add('dipilih');
+      });
+    });
+
+    $('btnKembaliKuis').addEventListener('click', kembaliKuis);
+    $('btnLanjutkanKuis').addEventListener('click', function(){ lanjutkanKuis(); });
+
+    // muat gambar soal/opsi khusus untuk area quis
+    muatSemuaGambarSoal('#kuisBody');
+    renderMathJax($('kuisBody'));
+
+    kuisSisaDetik = kuisDurasi;
+    perbaruiTampilanTimerKuis();
+    mulaiTimerKuis();
+  }
+
+  function mulaiTimerKuis(){
+    hentikanTimerKuis();
+    kuisTimerId = setInterval(function(){
+      kuisSisaDetik--;
+      perbaruiTampilanTimerKuis();
+      if (kuisSisaDetik <= 0){
+        hentikanTimerKuis();
+        lanjutkanKuis(); // waktu habis -> otomatis pindah ke soal berikutnya
+      }
+    }, 1000);
+  }
+
+  function hentikanTimerKuis(){
+    if (kuisTimerId){ clearInterval(kuisTimerId); kuisTimerId = null; }
+  }
+
+  function perbaruiTampilanTimerKuis(){
+    const el = $('kuisTimer');
+    if (!el) return;
+    el.textContent = '⏱ ' + Math.max(kuisSisaDetik, 0);
+    el.classList.toggle('warn', kuisSisaDetik <= 10);
+  }
+
+  function lanjutkanKuis(){
+    hentikanTimerKuis();
+    if (kuisIndex >= kuisSoalList.length - 1){
+      selesaikanKuis();
+      return;
+    }
+    kuisIndex++;
+    renderSoalKuis(kuisIndex);
+  }
+
+  function kembaliKuis(){
+    if (kuisIndex === 0) return;
+    hentikanTimerKuis();
+    kuisIndex--;
+    renderSoalKuis(kuisIndex);
+  }
+
+  function selesaikanKuis(){
+    hentikanTimerKuis();
+    let benar = 0;
+    kuisSoalList.forEach(function(s, i){
+      if (s.kunci && kuisJawaban[i] && String(kuisJawaban[i]).toUpperCase() === String(s.kunci).toUpperCase()) benar++;
+    });
+
+    $('kuisProgress').textContent = 'Quis Selesai';
+    $('kuisTimer').textContent = '✓';
+    $('kuisTimer').classList.remove('warn');
+
+    let html = '<div class="kuis-skor">Skor: ' + benar + ' / ' + kuisSoalList.length + '</div>';
+    html += '<div class="kuis-footer" style="justify-content:center; margin-bottom:16px;">';
+    html += '<button class="btn-primary" id="btnTampilkanKunciKuis" type="button">🔑 Tunjukkan Kunci Jawaban</button>';
+    html += '</div>';
+    html += '<div id="kuisKunciWrap"></div>';
+
+    $('kuisBody').innerHTML = html;
+    $('btnTampilkanKunciKuis').addEventListener('click', tampilkanKunciKuis);
+  }
+
+  function tampilkanKunciKuis(){
+    let html = '';
+    kuisSoalList.forEach(function(s, i){
+      const jawabanUser = kuisJawaban[i];
+      const kunci = s.kunci ? String(s.kunci).toUpperCase() : null;
+      const benar = kunci && jawabanUser && String(jawabanUser).toUpperCase() === kunci;
+      const soalOlahan = ekstrakGambarDariTeks(s.soal);
+
+      html += '<div class="kuis-hasil-item ' + (kunci ? (benar ? 'benar' : 'salah') : '') + '">';
+      html += '<b>' + (i + 1) + '.</b> ' + escapeHtml(soalOlahan.teksBersih);
+      html += '<div class="kuis-hasil-info">';
+      html += 'Jawaban Anda: <b>' + (jawabanUser ? escapeHtml(jawabanUser) : '(tidak dijawab)') + '</b>';
+      if (kunci) html += ' &nbsp;|&nbsp; Kunci Jawaban: <b>' + escapeHtml(kunci) + '</b>';
+      html += '</div></div>';
+    });
+    $('kuisKunciWrap').innerHTML = html;
+    renderMathJax($('kuisKunciWrap'));
+    $('btnTampilkanKunciKuis').style.display = 'none';
+  }
+
+  function tutupKuis(){
+    hentikanTimerKuis();
+    $('kuisOverlay').classList.remove('show');
+  }
+
   $('btnPreview').addEventListener('click', doPreview);
   $('btnPrint').addEventListener('click', doPrint);
   $('btnReset').addEventListener('click', doReset);
+  $('btnKuis').addEventListener('click', doMulaiKuis);
+  $('btnTutupKuis').addEventListener('click', tutupKuis);
 })();
 </script>
 
