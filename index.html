@@ -578,6 +578,10 @@
         <label for="tampilkanKunci">Sertakan kunci jawaban (untuk arsip guru, jangan dicetak untuk siswa)</label>
       </div>
       <div class="checkbox-line">
+        <input type="checkbox" id="tampilkanKop" checked>
+        <label for="tampilkanKop">Tampilkan Kop Soal, Identitas Siswa &amp; Petunjuk (jika dimatikan, lembar langsung berisi soal)</label>
+      </div>
+      <div class="checkbox-line">
         <input type="checkbox" id="hematKertas" checked>
         <label for="hematKertas">Mode Hemat Kertas (2 kolom, font &amp; gambar dipadatkan)</label>
       </div>
@@ -930,10 +934,12 @@
     const kodeMapel    = escapeHtml($('kodeMapel').value.toUpperCase());
     const tampilKunci  = $('tampilkanKunci').checked;
     const modeHemat    = $('hematKertas').checked;
+    const tampilKop    = $('tampilkanKop').checked;
 
     $('kertasSoal').className = 'kertas' + (modeHemat ? ' hemat' : '');
 
     let html = '';
+    if (tampilKop) {
     html += '<div class="kop">';
     if (logoDataUrl) {
       html += '<img class="kop-logo" src="' + logoDataUrl + '" alt="Logo sekolah">';
@@ -957,6 +963,7 @@
           + '2) Bacalah setiap soal dengan teliti sebelum menjawab. '
           + '3) Pilih salah satu jawaban yang dianggap paling tepat. '
           + '4) Periksa kembali jawaban sebelum diserahkan.</div>';
+    }
 
     const { soalTerurut, headerMap } = urutkanSoalPerBentuk(soalList);
     const grupInfo = tandaiGrupPilihanBesar(soalTerurut);
